@@ -3,17 +3,31 @@ using System.Text.RegularExpressions;
 
 namespace MemoCrypt;
 
-public partial class PolybiusCipher
+public class PolybiusCipher
 {
     private const int GridSize = 6;
     private const string BaseCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
     private readonly char?[,] _encryptionMatrix;
-    private readonly Dictionary<char, (int Row, int Col)> _coordinateOf;
-
-    private string _keyword;
-    private bool _strict;
     
+    private readonly Dictionary<char, (int Row, int Col)> _coordinateOf;
+    private string _keyword;
+
+    private string _keyedAlphabet;
+
+    private string GetKeyedAlphabet()
+    {
+        return _keyedAlphabet;
+    }
+    public void SetKeyedAlphabet(string keyword)
+    {
+        _keyedAlphabet = CompileKeyedAlphabet(NormalizeKey(keyword));
+        if (string.IsNullOrEmpty(_keyedAlphabet))
+        {
+            _keyedAlphabet = BaseCharSet;
+        }
+    }
+
     /// <summary>
     /// Initialize a new instance of the PolybiusCipher class to encrypt and decrypt memos.
     ///
@@ -24,18 +38,18 @@ public partial class PolybiusCipher
     /// </summary>
     /// <param name="keyword">The keyword</param>
     /// <param name="strict">Strictness (default: false).</param>
-    public PolybiusCipher(string keyword = "", bool strict = false)
+    public PolybiusCipher(string keyword = "",  bool strict = false)
     {
-        _strict = strict;
+        _keyword = keyword;
+        SetStrict(strict);
         
-        _keyword = NormalizeKey(keyword);
-        string keyedAlphabet = CompileKeyedAlphabet(_keyword);
-        
+        _keyedAlphabet = CompileKeyedAlphabet(NormalizeKey(keyword));
         _encryptionMatrix = new char?[GridSize, GridSize];
         _coordinateOf = new Dictionary<char, (int Row, int Col)>();
-        BuildEncryptionMatrix(keyedAlphabet);
+        
+        BuildEncryptionMatrix(GetKeyedAlphabet());
     }
-
+    
     /// <summary>
     /// Encrypt a memo.
     /// </summary>
@@ -44,12 +58,12 @@ public partial class PolybiusCipher
     /// <exception cref="FormatException">On empty input or if the lenght of the ciphertext is uneven.</exception>
     public string Encrypt(string plaintext)
     {
-        if (_strict && !IsValidText(plaintext))
+        if (_strict && !Validators.IsValidText(plaintext))
         {
             throw new FormatException($"Plaintext '{plaintext}' is not a valid string.");
         }
         
-        string normalizedText = NormalizeString(plaintext);
+        string normalizedText = Validators.NormalizeString(plaintext);
         
         var sb = new StringBuilder(normalizedText.Length * 2);
 
@@ -71,6 +85,8 @@ public partial class PolybiusCipher
     /// <exception cref="FormatException">On empty input or if the lenght of the ciphertext is uneven.</exception>
     public string Decrypt(string ciphertext)
     {
+        
+        
         if (ciphertext.Length == 0)
         {
             throw new FormatException("Ciphertext is empty.");
@@ -99,8 +115,11 @@ public partial class PolybiusCipher
     public void SetKeyWord(string keyword)
     {
         _keyword = NormalizeKey(keyword);
+        SetKeyedAlphabet(_keyword);
+        BuildEncryptionMatrix(GetKeyedAlphabet());
     }
 
+    private bool _strict;
     public bool GetStrict()
     {
         return _strict;
@@ -186,13 +205,6 @@ public partial class PolybiusCipher
         return compliledAlphabet;
     }
 
-    // depends on implementation
-    [GeneratedRegex(@"[^A-Za-z\s]")] 
-    private static partial Regex InValidChars();
-    private static bool IsValidText (string input)
-    {
-        return !InValidChars().IsMatch(input);
-    }
     
     /// <summary>
     /// Normalizes and deduplicates the input.
@@ -208,7 +220,7 @@ public partial class PolybiusCipher
             return string.Empty;
         }
 
-        var normalizedKeyword = NormalizeString(keyword);
+        var normalizedKeyword = Validators.NormalizeString(keyword);
         if (string.IsNullOrEmpty(normalizedKeyword))
         {
             return string.Empty;
@@ -218,8 +230,26 @@ public partial class PolybiusCipher
         }
         return new string(normalizedKeyword.Distinct().ToArray());
     }
-    
-    [GeneratedRegex(@"[^A-Za-z\s]+")] 
+}
+
+/// <summary>
+/// Convenience class providing methods for text- and input validation.
+/// </summary>
+public abstract partial class Validators
+{
+    [GeneratedRegex(@"[^A-Za-z\s]")]
+    private static partial Regex InvalidChars();
+    /// <summary>
+    /// Check if the string consists of valid characters only.
+    /// </summary>
+    /// <param name="text">Text to validate.</param>
+    /// <returns>`true` if all characters are valid, otherwise `false`</returns>
+    public static bool IsValidText (string text)
+    {
+        return !InvalidChars().IsMatch(text);
+    }
+        
+    [GeneratedRegex(@"[^A-Za-z\s]+")]
     private static partial Regex InValidCharsPattern();
     /// <summary>
     /// Converts the input to uppercase, removes all unallowed characters defined in the pattern `ValidCharsRegex`
@@ -232,10 +262,11 @@ public partial class PolybiusCipher
     /// <returns>
     /// string: The normalized string for further processing. 
     /// </returns>
-    private static string NormalizeString(string plaintext)
+    public static string NormalizeString(string plaintext)
     {
         // we use `string.ToUpperCaseInvariant` over `string.ToUpperCase` to avoid unexpected (local) character mappings
-        string normalizedText = InValidCharsPattern().Replace(plaintext.ToUpperInvariant(), "");
+        var normalizedText = InValidCharsPattern().Replace(plaintext.ToUpperInvariant(), "");
         return Regex.Replace(normalizedText, @"\s{2,}", " ");
     }
+
 }

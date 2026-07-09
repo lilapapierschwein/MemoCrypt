@@ -1,144 +1,195 @@
 ﻿namespace MemoCrypt
 {
-    abstract class Program
+    internal abstract class Program
     {
-        private static PolybiusCipher _cipher = new PolybiusCipher();
+        private static readonly PolybiusCipher Cipher = new PolybiusCipher();
 
-        static void Main()
+        public static void Main(string[] args)
         {
-            // RunTest();
-            RunInteractive();
-        }
-
-        static void RunInteractive()
-        {
-            var consoleTitle = "MemoCrypt Interactive";
-            var option = 0;
-            Console.Title = consoleTitle;
-
-            // set mode
-            Console.Write("Run the app in strict mode? [y/N]: ");
-            var strictModeSetting = Console.ReadLine() ?? string.Empty;
-            var strictMode = strictModeSetting.Trim().ToLower() == "y";
-            Console.Clear();
-
-            if (strictMode)
-            {
-                consoleTitle += " (Strict Mode)";
-                Console.Title = consoleTitle;
+                SetConsoleTitle(Utils.Constants.Prog);
+                if (args.Length > 0)
+                {
+                    RunCli(args);
+                    return;
+                }
+                // fallback
+                Utils.ShowVersion();
             }
 
-            Console.Write("Insert the encryption key: ");
-            _cipher.SetKeyWord((Console.ReadLine() ?? string.Empty).Trim());
-
-            while (true)
+            static void RunInteractive()
             {
-                Console.Clear();
-                Console.Write(
-                    "What do you want to do?\n" +
-                    " [1] Encrypt a memo\n" +
-                    " [2] Decrypt a ciphertext\n" +
-                    "Choose [1/2]: "
-                );
+                Utils.SetConsoleTitle(" | Interactive", true);
+                var option = 0;
 
-                var userInput = Console.ReadLine() ?? "0";
-                if (!int.TryParse(userInput, out var userOption))
+                // set mode
+                Console.Write("Run the app in strict mode? [y/N]: ");
+                var strictModeSetting = Console.ReadLine() ?? string.Empty;
+                var strictMode = strictModeSetting.Trim().ToLower() == "y";
+                Console.Clear();
+
+                if (strictMode)
                 {
-                    Console.WriteLine(
-                        userInput == "" ? $"Error: Empty input!" : $"Error '{userInput}' is not a number!");
-                    Console.Write("Press any key to continue...");
-                    Console.ReadLine();
-                    continue;
+                    Utils.SetConsoleTitle("(Strict Mode)", true);
                 }
 
-                if (userOption == 1 || userOption == 2)
+                Console.Write("Insert the encryption key: ");
+                Cipher.SetKeyWord((Console.ReadLine() ?? string.Empty).Trim());
+
+                while (true)
                 {
+                    Console.Clear();
+                    Console.Write(
+                        "What do you want to do?\n" +
+                        " [1] Encrypt a memo\n" +
+                        " [2] Decrypt a ciphertext\n" +
+                        "Choose [1/2]: "
+                    );
+
+                    var userInput = (Console.ReadLine() ?? string.Empty).Trim();
+                    if (!int.TryParse(userInput, out var userOption))
+                    {
+                        Console.WriteLine(
+                            "\n" + (userInput == ""
+                                ? $"Error: Empty input!"
+                                : $"Error '{userInput}' is not a number!"));
+                        Console.Write("Press any key to continue or 'Q' to quit...");
+                        ConsoleKeyInfo key = Console.ReadKey(intercept: true);
+                        if (key.Key == ConsoleKey.Q)
+                        {
+                            Environment.Exit(0);
+                        }
+
+                        continue;
+                    }
+
+                    if (!(userOption == 1 || userOption == 2))
+                    {
+                        Console.WriteLine($"Error: Invalid option ({option})");
+                        Console.Write("Press any key to continue...");
+                        Console.ReadKey(intercept: true);
+                        continue;
+                    }
+
                     option = userOption;
                     break;
                 }
 
-                Console.WriteLine($"Error: Invalid option ({option})");
-                Console.Write("Press any key to continue...");
-                Console.ReadLine();
-            }
-            
-            Console.Clear();
-            
-            switch (option)
-            {
-                case 1:
-                    consoleTitle += " | Encrypt a memo";
-                    Console.Title = consoleTitle;
+                Console.Clear();
 
-                    Console.WriteLine("Insert memo text:");
-                    var memoText = (Console.ReadLine() ?? string.Empty).Trim();
-                    Console.Clear();
-
-                    Console.WriteLine($"Encrypted text:\n\n{_cipher.Encrypt(memoText)}");
-                    break;
-                case 2:
-                    consoleTitle += " | Decrypt a ciphertext";
-                    Console.Title = consoleTitle;
-
-                    Console.WriteLine("Insert ciphertext:");
-                    var cipherText = (Console.ReadLine() ?? string.Empty).Trim();
-                    Console.Clear();
-
-                    Console.WriteLine($"Decrypted memo:\n\n{_cipher.Decrypt(cipherText)}");
-                    break;
-            }
-        }
-
-        private static void RunTest(string keyword = "PROGRAMMIEREN", string memoText = "HELLO WORLD",
-            bool strictMode = false)
-        {
-            _cipher.SetKeyWord(keyword);
-            _cipher.SetStrict(strictMode);
-
-            Console.Title = "Polybius Cipher Test Suite";
-
-            var consoleColor = Console.ForegroundColor;
-
-            var testResultColor = ConsoleColor.Red;
-            var errorCode = 0;
-
-            Console.WriteLine($"--- ORIGINAL MEMO TEXT ---\n\n{memoText}\n");
-
-            try
-            {
-                string encryptedText = _cipher.Encrypt(memoText);
-                string decryptedText = _cipher.Decrypt(encryptedText);
-
-                var testOk = (decryptedText == memoText);
-                testResultColor = testOk ? ConsoleColor.Green : ConsoleColor.Red;
-
-                Console.WriteLine($"--- ENCRYPTED ---\n\n{encryptedText}\n");
-                Console.WriteLine($"--- DECRYPTED ---\n\n{decryptedText}\n");
-
-                Console.WriteLine("--- RESULT ---\n");
-                Console.ForegroundColor = testResultColor;
-                Console.WriteLine(testOk ? "OK" : "FAIL");
-                Console.ForegroundColor = consoleColor;
-            }
-            catch (FormatException exc)
-            {
-                Console.WriteLine($"Error: {exc.Message}");
-                errorCode = 1;
-            }
-            catch (ArgumentException exc)
-            {
-                Console.WriteLine($"Error: {exc.Message}");
-                errorCode = 1;
-            }
-            finally
-            {
-                if (errorCode != 0)
+                switch (option)
                 {
-                    Console.ForegroundColor = testResultColor;
-                    Console.WriteLine("Test failed.");
+                    case 1:
+                        Utils.SetConsoleTitle("| Encrypt a memo", true);
+
+                        Console.WriteLine("Insert memo text:");
+                        var memoText = (Console.ReadLine() ?? string.Empty).Trim();
+                        Console.Clear();
+
+                        Console.WriteLine($"Encrypted text:\n\n{Cipher.Encrypt(memoText)}");
+                        break;
+                    case 2:
+                        Utils.SetConsoleTitle("| Decrypt a ciphertext", true);
+
+                        Console.WriteLine("Insert ciphertext:");
+                        var cipherText = (Console.ReadLine() ?? string.Empty).Trim();
+                        Console.Clear();
+
+                        Console.WriteLine($"Decrypted memo:\n\n{Cipher.Decrypt(cipherText)}");
+                        break;
+                }
+            }
+
+            static void RunCli(string[] args)
+            {
+                var parsedArgs = Utils.ParseCliOptions(args);
+                if (parsedArgs.ShowHelpText)
+                {
+                    Utils.ShowHelp();
+                    return;
+                }
+
+                if (parsedArgs.ShowVersionText)
+                {
+                    Utils.ShowVersion();
+                    return;
+                }
+
+                if (parsedArgs.RunInteractive)
+                {
+                    RunInteractive();
+                    return;
+                }
+
+                if (parsedArgs.RunTest)
+                {
+                    RunTest();
+                    return;
+                }
+
+                Cipher.SetKeyWord(parsedArgs.Key);
+                Cipher.SetStrict(parsedArgs.Strict);
+
+                Console.WriteLine($"KEY: {Cipher.GetKeyword()}");
+
+                string result = (parsedArgs.Action == Utils.CliAction.Encrypt)
+                    ? Cipher.Encrypt(parsedArgs.Text)
+                    : Cipher.Decrypt(parsedArgs.Text);
+                Console.WriteLine(result);
+            }
+
+            static void RunTest(string keyword = "PROGRAMMIEREN", string memoText = "HELLO WORLD",
+                bool strictMode = false)
+            {
+                Console.Title = $"{Utils.Constants.Prog} | Test Suite";
+                Console.WriteLine(Utils.CenterText(" Running Test... ", fillchar: '=', useTermWidth: true) + "\n");
+
+                bool testOk = false;
+
+                Cipher.SetKeyWord(keyword);
+                Cipher.SetStrict(strictMode);
+
+                Console.Title = "Polybius Cipher Test Suite";
+
+                var consoleColor = Console.ForegroundColor;
+
+                var errorCode = 0;
+
+                try
+                {
+                    string encryptedText = Cipher.Encrypt(memoText);
+                    string decryptedText = Cipher.Decrypt(encryptedText);
+
+                    testOk = (decryptedText == memoText);
+                    string resultText = (testOk ? "PASSED ✅" : "FAILED ❌");
+
+                    Console.WriteLine($"ORIGINAL TEXT:   {memoText}");
+                    Console.WriteLine($"ENCRYPTED TEXT:  {encryptedText}");
+                    Console.WriteLine($"DECRYPTED TEXT:  {decryptedText}");
+                    Console.WriteLine($"RESULT:          {resultText}");
+                }
+                catch (FormatException exc)
+                {
+                    Console.WriteLine($"Error: {exc.Message}");
+                    errorCode = 1;
+                }
+                catch (ArgumentException exc)
+                {
+                    Console.WriteLine($"Error: {exc.Message}");
+                    errorCode = 1;
+                }
+                finally
+                {
+                    string finalMsg = (errorCode != 0) ? "Testrun finished with errors." : "Testrun finished.";
+                    Console.ForegroundColor = (errorCode != 0) ? ConsoleColor.Red :
+                        testOk ? ConsoleColor.Green : ConsoleColor.Yellow;
+                    Console.WriteLine("\n" + Utils.CenterText($" {finalMsg} ", fillchar: '=', useTermWidth: true));
                     Console.ForegroundColor = consoleColor;
                 }
             }
+
+            static void SetConsoleTitle(string title)
+            {
+                Console.Title = title;
+            }
         }
     }
-}
