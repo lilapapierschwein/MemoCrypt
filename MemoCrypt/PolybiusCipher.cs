@@ -11,7 +11,8 @@ public partial class PolybiusCipher
     private readonly char?[,] _encryptionMatrix;
     private readonly Dictionary<char, (int Row, int Col)> _coordinateOf;
 
-    private readonly bool _strict;
+    private string _keyword;
+    private bool _strict;
     
     /// <summary>
     /// Initialize a new instance of the PolybiusCipher class to encrypt and decrypt memos.
@@ -23,11 +24,12 @@ public partial class PolybiusCipher
     /// </summary>
     /// <param name="keyword">The keyword</param>
     /// <param name="strict">Strictness (default: false).</param>
-    public PolybiusCipher(string keyword, bool strict = false)
+    public PolybiusCipher(string keyword = "", bool strict = false)
     {
-        _strict = strict;   
-        string normalizedKeyword = NormalizeKey(keyword);
-        string keyedAlphabet = CompileKeyedAlphabet(normalizedKeyword);
+        _strict = strict;
+        
+        _keyword = NormalizeKey(keyword);
+        string keyedAlphabet = CompileKeyedAlphabet(_keyword);
         
         _encryptionMatrix = new char?[GridSize, GridSize];
         _coordinateOf = new Dictionary<char, (int Row, int Col)>();
@@ -89,6 +91,26 @@ public partial class PolybiusCipher
         return sb.ToString();
     }
 
+    public string GetKeyword()
+    {
+        return _keyword;
+    }
+
+    public void SetKeyWord(string keyword)
+    {
+        _keyword = NormalizeKey(keyword);
+    }
+
+    public bool GetStrict()
+    {
+        return _strict;
+    }
+
+    public void SetStrict(bool strict)
+    {
+        _strict = strict;
+    }
+    
     /// <summary>
     /// Lookup method for the coordinate of a char in the enctryption matrix.
     /// </summary>
