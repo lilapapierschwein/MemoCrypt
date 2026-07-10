@@ -13,25 +13,7 @@ public abstract class Utils
         public static readonly string Prog = "MemoCrypt";
         public static readonly string Version = "0.1.0";
 
-        public static readonly string HelpText = $"{Prog} [HELP TEXT HERE]";
-        
-        public struct CliFlags
-        {
-            public struct Flags
-            {
-                public static readonly string[] HelpFlags = ["-h", "--help", "/h", "/help", "/?"];
-                public static readonly string[] VersionFlags = ["-V", "--version", "/V", "/version"];
-                public static readonly string[] InteractiveFlags = ["-i", "--interactive", "/i", "/interactive"];
-                public static readonly string[] TestRunFlags = ["-t", "--test", "/t", "/test"];
-                public static readonly string[] StrictModeFlags = ["-s", "--strict", "/s", "/strict"];
-                public static readonly string[] KeyFlags = ["-k", "--key", "/k", "/key"];
-            }
-
-            public struct Options
-            {
-                public static readonly string[] ActionOptions = ["-k", "--key", "/k", "/key"];
-            }
-        }
+        public static readonly string HelpText = $"{Prog} [HELPTEXT MISSING (TODO)]";
     }
     public static void ShowVersion()
     {
@@ -94,67 +76,131 @@ public abstract class Utils
         return true;
     }
 
-    public enum CliAction
+    public class CliParser
     {
-        Encrypt = 0,
-        Decrypt = 1,
-    }
+        private string[] OriginalArgs { get; set; }
+        public Arguments ParsedArgs { get; set; } = new Arguments();
 
-    public class CliArguments
-    {
-        public bool ShowHelpText { get; set; }
-        public bool ShowVersionText { get; set; }
-        public bool RunInteractive { get; set; }
-        public bool RunTest { get; set; }
-        public bool Strict { get; set; }
-        public string Key { get; set; } = "";
-        public CliAction Action { get; set; } = CliAction.Encrypt;
-        public string Text { get; set; } = string.Empty;
-    }
-    
-    public static CliArguments ParseCliOptions(string[] args)
-    {
-        var parsedArgs = new CliArguments();
-        
-        if (Constants.CliFlags.Flags.HelpFlags.Any(item => args.Contains(item)))
+        public CliParser(string[] args)
         {
-            parsedArgs.ShowHelpText = true;
-            return parsedArgs;
+            OriginalArgs = args;
+            Parse();
         }
-        if (Constants.CliFlags.Flags.VersionFlags.Any(item => args.Contains(item)))
+
+        private void Parse()
         {
-            parsedArgs.ShowVersionText = true;
-            return parsedArgs;
-        }
-        if (Constants.CliFlags.Flags.InteractiveFlags.Any(item => args.Contains(item)))
-        {
-            parsedArgs.RunInteractive = true;
-            return parsedArgs;
-        }
-        if (Constants.CliFlags.Flags.TestRunFlags.Any(item => args.Contains(item)))
-        {
-            parsedArgs.RunTest = true;
-            return parsedArgs;
-        }
-        
-        parsedArgs.Strict = Constants.CliFlags.Flags.StrictModeFlags.Any(item => args.Contains(item));
-        for (int i=0; i<args.Length; i++)
-        {
-            if (Constants.CliFlags.Flags.KeyFlags.Contains(args[i]))
+            if (Flags.Markers.HelpFlags.Any(item => OriginalArgs.Contains(item)))
             {
-                parsedArgs.Key = args[i+1];
-                i += 1;
-                continue;
-            }
-            if (args[i] == "encrypt" || args[i] == "decrypt") {
-                parsedArgs.Action = (args[i] == "encrypt") ? CliAction.Encrypt : CliAction.Decrypt;
-                continue;
+                ParsedArgs.ShowHelpText = true;
+                return;
             }
 
-            if (i != args.Length - 1) continue;
-            parsedArgs.Text = args[i];
-            return  parsedArgs;
+            if (Flags.Markers.VersionFlags.Any(item => OriginalArgs.Contains(item)))
+            {
+                ParsedArgs.ShowVersionText = true;
+                return;
+            }
+
+            if (Flags.Markers.InteractiveFlags.Any(item => OriginalArgs.Contains(item)))
+            {
+                ParsedArgs.RunInteractive = true;
+                return;
+            }
+
+            if (Flags.Markers.TestRunFlags.Any(item => OriginalArgs.Contains(item)))
+            {
+                ParsedArgs.RunTest = true;
+                return;
+            }
+
+            ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => OriginalArgs.Contains(item));
+            for (int i = 0; i < OriginalArgs.Length; i++)
+            {
+                if (Flags.Markers.KeyFlags.Contains(OriginalArgs[i]))
+                {
+                    ParsedArgs.Key = OriginalArgs[i + 1];
+                    i += 1;
+                    continue;
+                }
+
+                if (Flags.Markers.FileFlags.Contains(OriginalArgs[i]))
+                {
+                    ParsedArgs.FilePath = OriginalArgs[i + 1];
+                    i += 1;
+                    continue;
+                }
+
+                if (Flags.Markers.OutputFlags.Contains(OriginalArgs[i]))
+                {
+                    ParsedArgs.OutFilePath = OriginalArgs[i + 1];
+                    i += 1;
+                    continue;
+                }
+
+                if (OriginalArgs[i] == "encrypt" || OriginalArgs[i] == "decrypt")
+                {
+                    ParsedArgs.Action = (OriginalArgs[i] == "encrypt") ? Action.Encrypt : Action.Decrypt;
+                    continue;
+                }
+
+                if (i != OriginalArgs.Length - 1) continue;
+                ParsedArgs.Text = OriginalArgs[i];
+            }
         }
-        return parsedArgs;
+
+        public class Arguments
+        {
+            public bool ShowHelpText { get; set; }
+            public bool ShowVersionText { get; set; }
+            public bool RunInteractive { get; set; }
+            public bool RunTest { get; set; }
+            public bool Strict { get; set; }
+            public string FilePath { get; set; } = "";
+            public string OutFilePath { get; set; } = "";
+            public string Key { get; set; } = "";
+            public Action Action { get; set; } = Action.Encrypt;
+            public string Text { get; set; } = string.Empty;
+        }
+        
+        public enum Action
+        {
+            Encrypt,
+            Decrypt
+        }
+        
+        private struct Flags
+        {
+            public struct Markers
+            {
+                public static readonly string[] HelpFlags = ["-h", "--help", "/h", "/help", "/?"];
+                public static readonly string[] VersionFlags = ["-V", "--version", "/V", "/version"];
+                public static readonly string[] InteractiveFlags = ["-i", "--interactive", "/i", "/interactive"];
+                public static readonly string[] TestRunFlags = ["-t", "--test", "/t", "/test"];
+                public static readonly string[] StrictModeFlags = ["-s", "--strict", "/s", "/strict"];
+                public static readonly string[] KeyFlags = ["-k", "--key", "/k", "/key"];
+                public static readonly string[] FileFlags =  ["-f", "--file", "/f", "/file"];
+                public static readonly string[] OutputFlags =  ["-o", "--file", "/o", "/output"];
+            }
+        }
+    }
+
+    /// <summary>
+    /// Validate the given filepath.
+    /// </summary>
+    /// <param name="path">The filepath to validate.</param>
+    /// <exception cref="FileNotFoundException">If file does not exist.</exception>
+    public static void ValidateFilePath(string path)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"Input file not found: {path}", path);
+        }
+    }
+
+    public static string ReadFileContent(string path)
+    {
+        ValidateFilePath(path);
+        return File.ReadAllText(path);
     }
 }
+

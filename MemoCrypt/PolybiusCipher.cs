@@ -5,7 +5,7 @@ namespace MemoCrypt;
 
 public class PolybiusCipher
 {
-    private const int GridSize = 6;
+    private static readonly (int Rows, int Colums) GridSize = (6, 5);
     private const string BaseCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
     private readonly char?[,] _encryptionMatrix;
@@ -19,7 +19,8 @@ public class PolybiusCipher
     {
         return _keyedAlphabet;
     }
-    public void SetKeyedAlphabet(string keyword)
+
+    private void SetKeyedAlphabet(string keyword)
     {
         _keyedAlphabet = CompileKeyedAlphabet(NormalizeKey(keyword));
         if (string.IsNullOrEmpty(_keyedAlphabet))
@@ -44,7 +45,7 @@ public class PolybiusCipher
         SetStrict(strict);
         
         _keyedAlphabet = CompileKeyedAlphabet(NormalizeKey(keyword));
-        _encryptionMatrix = new char?[GridSize, GridSize];
+        _encryptionMatrix = new char?[GridSize.Rows, GridSize.Colums];
         _coordinateOf = new Dictionary<char, (int Row, int Col)>();
         
         BuildEncryptionMatrix(GetKeyedAlphabet());
@@ -64,14 +65,13 @@ public class PolybiusCipher
         }
         
         string normalizedText = Validators.NormalizeString(plaintext);
-        
         var sb = new StringBuilder(normalizedText.Length * 2);
 
         foreach (char c in normalizedText)
         {
             var (row, col) = GetCoordinateOf(c);
-            sb.Append(row);
-            sb.Append(col);
+            sb.Append(row+1);
+            sb.Append(col+1);
         }
         
         return sb.ToString();
@@ -85,8 +85,6 @@ public class PolybiusCipher
     /// <exception cref="FormatException">On empty input or if the lenght of the ciphertext is uneven.</exception>
     public string Decrypt(string ciphertext)
     {
-        
-        
         if (ciphertext.Length == 0)
         {
             throw new FormatException("Ciphertext is empty.");
@@ -99,9 +97,13 @@ public class PolybiusCipher
 
         for (int i = 0; i < ciphertext.Length; i += 2)
         {
-            int row = ciphertext[i] - '0';
-            int col = ciphertext[i + 1] - '0';
-            sb.Append(GetCharater(row, col));
+            int row = (ciphertext[i] - '0') - 1;
+            int col = (ciphertext[i + 1] - '0') - 1;
+            
+            if (row < 0 || row >= GridSize.Rows || col < 0 || col >= GridSize.Colums)
+                throw new FormatException($"Coordinate out of range: {ciphertext[i]}{ciphertext[i + 1]}");
+            
+            sb.Append(GetCharacter(row, col));
         }
         
         return sb.ToString();
@@ -115,6 +117,21 @@ public class PolybiusCipher
     public void SetKeyWord(string keyword)
     {
         _keyword = NormalizeKey(keyword);
+    }
+
+    public void UpdateKey(string keyword = "", bool reload = false)
+    {
+        if (reload)
+        {
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                SetKeyWord(keyword);
+            }
+            SetKeyedAlphabet(_keyword);
+            BuildEncryptionMatrix(GetKeyedAlphabet());
+            return;
+        }
+        SetKeyWord(keyword);
         SetKeyedAlphabet(_keyword);
         BuildEncryptionMatrix(GetKeyedAlphabet());
     }
@@ -156,8 +173,8 @@ public class PolybiusCipher
     {
         for (int i = 0; i < keyedAlphabet.Length; i++)
         {
-            int row = i / GridSize;
-            int col = i % GridSize;
+            int row = i / GridSize.Colums;
+            int col = i % GridSize.Colums;
             
             char c = keyedAlphabet[i];
             _encryptionMatrix[row, col] = c;
@@ -172,13 +189,13 @@ public class PolybiusCipher
     /// <param name="col">The column.</param>
     /// <returns>char: The character matching the coordinates.</returns>
     /// <exception cref="FormatException">When the coordinates map to an unused (overflow) grid cell.</exception>
-    private char GetCharater(int row, int col)
+    private char GetCharacter(int row, int col)
     {
         char? c = _encryptionMatrix[row, col];
 
         if (c is null)
         {
-            throw new FormatException($"Coordinate ({row},{col}) is an unused grid cell.");
+            throw new FormatException($"Coordinate ({row+1},{col+1}) is an unused grid cell.");
         }
         
         return c.Value;
@@ -201,7 +218,6 @@ public class PolybiusCipher
                 compliledAlphabet += c;
             }
         }
-        
         return compliledAlphabet;
     }
 

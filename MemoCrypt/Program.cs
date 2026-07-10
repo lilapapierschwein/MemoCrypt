@@ -12,13 +12,13 @@
                     RunCli(args);
                     return;
                 }
-                // fallback
                 Utils.ShowVersion();
+                Console.WriteLine("\n\nTo run the app interactive mode, run with '-i'.");
             }
 
             static void RunInteractive()
             {
-                Utils.SetConsoleTitle(" | Interactive", true);
+                Utils.SetConsoleTitle("| Interactive", true);
                 var option = 0;
 
                 // set mode
@@ -29,11 +29,13 @@
 
                 if (strictMode)
                 {
+                    Cipher.SetStrict(true);
                     Utils.SetConsoleTitle("(Strict Mode)", true);
                 }
 
                 Console.Write("Insert the encryption key: ");
                 Cipher.SetKeyWord((Console.ReadLine() ?? string.Empty).Trim());
+                Cipher.UpdateKey(Cipher.GetKeyword());
 
                 while (true)
                 {
@@ -101,7 +103,26 @@
 
             static void RunCli(string[] args)
             {
-                var parsedArgs = Utils.ParseCliOptions(args);
+                var parser = new Utils.CliParser(args);
+                var parsedArgs = parser.ParsedArgs;
+                
+                if (!string.IsNullOrEmpty(parsedArgs.FilePath))
+                {
+                    var filePath = Path.GetFullPath(parsedArgs.FilePath);
+                    try
+                    {
+                        parsedArgs.Text = Utils.ReadFileContent(filePath).Trim();
+                    }
+                    catch (FileNotFoundException e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+                // TODO: implement output to file
+                // if (!string.IsNullOrEmpty(parsedArgs.OutFilePath))
+                // {
+                // }
+                
                 if (parsedArgs.ShowHelpText)
                 {
                     Utils.ShowHelp();
@@ -125,13 +146,11 @@
                     RunTest();
                     return;
                 }
-
-                Cipher.SetKeyWord(parsedArgs.Key);
+                
+                Cipher.UpdateKey(parsedArgs.Key);
                 Cipher.SetStrict(parsedArgs.Strict);
 
-                Console.WriteLine($"KEY: {Cipher.GetKeyword()}");
-
-                string result = (parsedArgs.Action == Utils.CliAction.Encrypt)
+                string result = (parsedArgs.Action == Utils.CliParser.Action.Encrypt)
                     ? Cipher.Encrypt(parsedArgs.Text)
                     : Cipher.Decrypt(parsedArgs.Text);
                 Console.WriteLine(result);
