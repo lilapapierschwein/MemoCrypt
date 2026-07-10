@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MemoCrypt;
 
-
 public abstract class Utils
 {
     /// <summary>
@@ -194,11 +193,20 @@ public abstract class Utils
     /// </summary>
     /// <param name="path">The filepath to validate.</param>
     /// <exception cref="FileNotFoundException">If file does not exist.</exception>
-    public static void ValidateFilePath(string path)
+    public static void ValidateFilePath(string? path, bool isDirectory = false)
     {
+        if (isDirectory)
+        {
+            if (!Directory.Exists(path))
+            {
+                throw new DirectoryNotFoundException($"Directory '{path}' does not exist.");
+            }
+            return;
+        }
+        
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException($"Input file not found: {path}", path);
+            throw new FileNotFoundException($"File file not found.", path);
         }
     }
 
@@ -206,6 +214,21 @@ public abstract class Utils
     {
         ValidateFilePath(path);
         return File.ReadAllText(path);
+    }
+    
+    public static void WriteToFile(string path, string content, bool append = false, bool validate = true)
+    {
+        if (validate)
+        {
+            ValidateFilePath(path);
+        }
+
+        if (append)
+        {
+            File.AppendAllText(path, content);
+            return;
+        }
+        File.WriteAllText(path, content);
     }
 }
 

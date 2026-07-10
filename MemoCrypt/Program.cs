@@ -2,7 +2,7 @@
 {
     internal abstract class Program
     {
-        private static readonly PolybiusCipher Cipher = new PolybiusCipher();
+        private static PolybiusCipher Cipher = new PolybiusCipher();
 
         public static void Main(string[] args)
         {
@@ -11,7 +11,26 @@
             {
                 try
                 {
-                    RunCli(args);
+                    var cli = new Cli();
+                    (Cli.TargetAction action, Cipher) = cli.RunCli(args, Cipher);
+
+                    switch (action)
+                    {
+                        case Cli.TargetAction.ShowHelp:
+                            Utils.ShowHelp();
+                            break;
+                        case Cli.TargetAction.ShowVersion:
+                            Utils.ShowVersion();
+                            break;
+                        case Cli.TargetAction.RunInteractive:
+                            RunInteractive();
+                            break;
+                        case Cli.TargetAction.RunTest:
+                            RunTest();
+                            break;
+                        case Cli.TargetAction.None:
+                            break;
+                    }
                 }
                 catch (FormatException exc)
                 {
@@ -25,10 +44,7 @@
                 {
                     Console.WriteLine($"Error: {exc.Message}");
                 }
-                return;
             }
-            Utils.ShowVersion();
-            Console.WriteLine("\n\n[Prototype] To run the app interactive mode, run with '-i'.");
         }
 
             static void RunInteractive()
@@ -161,7 +177,7 @@
                     RunTest();
                     return;
                 }
-                
+
                 Cipher.UpdateKey(parsedArgs.Key);
                 Cipher.SetStrict(parsedArgs.Strict);
 
