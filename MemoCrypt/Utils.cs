@@ -94,7 +94,6 @@ public abstract class Utils
                 ParsedArgs.ShowHelpText = true;
                 return;
             }
-
             if (Flags.Markers.VersionFlags.Any(item => OriginalArgs.Contains(item)))
             {
                 ParsedArgs.ShowVersionText = true;
@@ -106,7 +105,6 @@ public abstract class Utils
                 ParsedArgs.RunInteractive = true;
                 return;
             }
-
             if (Flags.Markers.TestRunFlags.Any(item => OriginalArgs.Contains(item)))
             {
                 ParsedArgs.RunTest = true;
@@ -114,37 +112,43 @@ public abstract class Utils
             }
 
             ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => OriginalArgs.Contains(item));
-            for (int i = 0; i < OriginalArgs.Length; i++)
+            try
             {
-                if (Flags.Markers.KeyFlags.Contains(OriginalArgs[i]))
+                for (int i = 0; i < OriginalArgs.Length; i++)
                 {
-                    ParsedArgs.Key = OriginalArgs[i + 1];
-                    i += 1;
-                    continue;
-                }
+                    if (Flags.Markers.KeyFlags.Contains(OriginalArgs[i]))
+                    {
+                        ParsedArgs.Key = OriginalArgs[i + 1];
+                        i += 1;
+                        continue;
+                    }
 
-                if (Flags.Markers.FileFlags.Contains(OriginalArgs[i]))
-                {
-                    ParsedArgs.FilePath = OriginalArgs[i + 1];
-                    i += 1;
-                    continue;
-                }
+                    if (Flags.Markers.FileFlags.Contains(OriginalArgs[i]))
+                    {
+                        ParsedArgs.FilePath = OriginalArgs[i + 1];
+                        i += 1;
+                        continue;
+                    }
 
-                if (Flags.Markers.OutputFlags.Contains(OriginalArgs[i]))
-                {
-                    ParsedArgs.OutFilePath = OriginalArgs[i + 1];
-                    i += 1;
-                    continue;
-                }
+                    if (Flags.Markers.OutputFlags.Contains(OriginalArgs[i]))
+                    {
+                        ParsedArgs.OutFilePath = OriginalArgs[i + 1];
+                        i += 1;
+                        continue;
+                    }
 
-                if (OriginalArgs[i] == "encrypt" || OriginalArgs[i] == "decrypt")
-                {
-                    ParsedArgs.Action = (OriginalArgs[i] == "encrypt") ? Action.Encrypt : Action.Decrypt;
-                    continue;
-                }
+                    if (OriginalArgs[i] == "encrypt" || OriginalArgs[i] == "decrypt")
+                    {
+                        ParsedArgs.Action = (OriginalArgs[i] == "encrypt") ? Action.Encrypt : Action.Decrypt;
+                        continue;
+                    }
 
-                if (i != OriginalArgs.Length - 1) continue;
-                ParsedArgs.Text = OriginalArgs[i];
+                    if (i != OriginalArgs.Length - 1) continue;
+                    ParsedArgs.Text = OriginalArgs[i];
+                }
+            }
+            catch (IndexOutOfRangeException) {
+                throw new IndexOutOfRangeException("Unable to parse malformed command line arguments.");
             }
         }
 
@@ -156,6 +160,7 @@ public abstract class Utils
             public bool RunTest { get; set; }
             public bool Strict { get; set; }
             public string FilePath { get; set; } = "";
+            // TODO
             public string OutFilePath { get; set; } = "";
             public string Key { get; set; } = "";
             public Action Action { get; set; } = Action.Encrypt;

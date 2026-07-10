@@ -6,26 +6,30 @@
 
         public static void Main(string[] args)
         {
-                SetConsoleTitle(Utils.Constants.Prog);
-                if (args.Length > 0)
+            SetConsoleTitle(Utils.Constants.Prog);
+            if (args.Length > 0)
+            {
+                try
                 {
-                    try
-                    {
-                        RunCli(args);
-                    }
-                    catch (FormatException exc)
-                    {
-                        Console.WriteLine($"Error: {exc.Message}");
-                    }
-                    catch (ArgumentException exc)
-                    {
-                        Console.WriteLine($"Error: {exc.Message}");
-                    }
-                    return;
+                    RunCli(args);
                 }
-                Utils.ShowVersion();
-                Console.WriteLine("\n\nTo run the app interactive mode, run with '-i'.");
+                catch (FormatException exc)
+                {
+                    Console.WriteLine($"Error: {exc.Message}");
+                }
+                catch (ArgumentException exc)
+                {
+                    Console.WriteLine($"Error: {exc.Message}");
+                }
+                catch (IndexOutOfRangeException exc)
+                {
+                    Console.WriteLine($"Error: {exc.Message}");
+                }
+                return;
             }
+            Utils.ShowVersion();
+            Console.WriteLine("\n\n[Prototype] To run the app interactive mode, run with '-i'.");
+        }
 
             static void RunInteractive()
             {
@@ -126,7 +130,7 @@
                     }
                     catch (FileNotFoundException e)
                     {
-                        Console.WriteLine(e);
+                        throw new FieldAccessException(e.Message, e);
                     }
                 }
                 // TODO: implement output to file
