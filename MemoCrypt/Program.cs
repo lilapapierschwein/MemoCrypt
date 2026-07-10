@@ -9,7 +9,18 @@
                 SetConsoleTitle(Utils.Constants.Prog);
                 if (args.Length > 0)
                 {
-                    RunCli(args);
+                    try
+                    {
+                        RunCli(args);
+                    }
+                    catch (FormatException exc)
+                    {
+                        Console.WriteLine($"Error: {exc.Message}");
+                    }
+                    catch (ArgumentException exc)
+                    {
+                        Console.WriteLine($"Error: {exc.Message}");
+                    }
                     return;
                 }
                 Utils.ShowVersion();

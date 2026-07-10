@@ -7,19 +7,15 @@ public class PolybiusCipher
 {
     private static readonly (int Rows, int Colums) GridSize = (6, 5);
     private const string BaseCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
-
     private readonly char?[,] _encryptionMatrix;
-    
     private readonly Dictionary<char, (int Row, int Col)> _coordinateOf;
     private string _keyword;
-
+    
     private string _keyedAlphabet;
-
     private string GetKeyedAlphabet()
     {
         return _keyedAlphabet;
     }
-
     private void SetKeyedAlphabet(string keyword)
     {
         _keyedAlphabet = CompileKeyedAlphabet(NormalizeKey(keyword));
