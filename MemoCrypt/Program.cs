@@ -2,7 +2,7 @@
 {
     internal abstract class Program
     {
-        private static PolybiusCipher Cipher = new PolybiusCipher();
+        private static PolybiusCipher _cipher = new PolybiusCipher();
         
         public static void Main(string[] args)
         {
@@ -16,7 +16,7 @@
             try
             {
                 var cli = new Cli();
-                (Cli.TargetAction action, Cipher) = cli.RunCli(args, Cipher);
+                (var action, _cipher) = cli.RunCli(args, _cipher);
                 
                 switch (action)
                 {
@@ -66,13 +66,13 @@
 
                 if (strictMode)
                 {
-                    Cipher.SetStrict(true);
+                    _cipher.SetStrict(true);
                     Utils.SetConsoleTitle("(Strict Mode)", true);
                 }
 
                 Console.Write("Insert the encryption key: ");
-                Cipher.SetKeyWord((Console.ReadLine() ?? string.Empty).Trim());
-                Cipher.UpdateKey(Cipher.GetKeyword());
+                _cipher.SetKeyWord((Console.ReadLine() ?? string.Empty).Trim());
+                _cipher.UpdateKey(_cipher.GetKeyword());
 
                 while (true)
                 {
@@ -124,7 +124,7 @@
                         var memoText = (Console.ReadLine() ?? string.Empty).Trim();
                         Console.Clear();
 
-                        Console.WriteLine($"Encrypted text:\n\n{Cipher.Encrypt(memoText)}");
+                        Console.WriteLine($"Encrypted text:\n\n{_cipher.Encrypt(memoText)}");
                         break;
                     case 2:
                         Utils.SetConsoleTitle("| Decrypt a ciphertext", true);
@@ -133,65 +133,10 @@
                         var cipherText = (Console.ReadLine() ?? string.Empty).Trim();
                         Console.Clear();
 
-                        Console.WriteLine($"Decrypted memo:\n\n{Cipher.Decrypt(cipherText)}");
+                        Console.WriteLine($"Decrypted memo:\n\n{_cipher.Decrypt(cipherText)}");
                         break;
                 }
             }
-
-            // static void RunCli(string[] args)
-            // {
-            //     var parser = new Utils.CliParser(args);
-            //     var parsedArgs = parser.ParsedArgs;
-            //     
-            //     if (!string.IsNullOrEmpty(parsedArgs.FilePath))
-            //     {
-            //         var filePath = Path.GetFullPath(parsedArgs.FilePath);
-            //         try
-            //         {
-            //             parsedArgs.Text = Utils.ReadFileContent(filePath).Trim();
-            //         }
-            //         catch (FileNotFoundException e)
-            //         {
-            //             throw new FieldAccessException(e.Message, e);
-            //         }
-            //     }
-            //     // TODO: implement output to file
-            //     // if (!string.IsNullOrEmpty(parsedArgs.OutFilePath))
-            //     // {
-            //     // }
-            //     
-            //     if (parsedArgs.ShowHelpText)
-            //     {
-            //         Utils.ShowHelp();
-            //         return;
-            //     }
-            //
-            //     if (parsedArgs.ShowVersionText)
-            //     {
-            //         Utils.ShowVersion();
-            //         return;
-            //     }
-            //
-            //     if (parsedArgs.RunInteractive)
-            //     {
-            //         RunInteractive();
-            //         return;
-            //     }
-            //
-            //     if (parsedArgs.RunTest)
-            //     {
-            //         RunTest();
-            //         return;
-            //     }
-            //
-            //     Cipher.UpdateKey(parsedArgs.Key);
-            //     Cipher.SetStrict(parsedArgs.Strict);
-            //
-            //     string result = (parsedArgs.Action == Utils.CliParser.Action.Encrypt)
-            //         ? Cipher.Encrypt(parsedArgs.Text)
-            //         : Cipher.Decrypt(parsedArgs.Text);
-            //     Console.WriteLine(result);
-            // }
 
             static void RunTest(string keyword = "PROGRAMMIEREN", string memoText = "HELLO WORLD",
                 bool strictMode = false)
@@ -201,8 +146,8 @@
 
                 bool testOk = false;
 
-                Cipher.SetKeyWord(keyword);
-                Cipher.SetStrict(strictMode);
+                _cipher.SetKeyWord(keyword);
+                _cipher.SetStrict(strictMode);
 
                 Console.Title = "Polybius Cipher Test Suite";
 
@@ -212,8 +157,8 @@
 
                 try
                 {
-                    string encryptedText = Cipher.Encrypt(memoText);
-                    string decryptedText = Cipher.Decrypt(encryptedText);
+                    string encryptedText = _cipher.Encrypt(memoText);
+                    string decryptedText = _cipher.Decrypt(encryptedText);
 
                     testOk = (decryptedText == memoText);
                     string resultText = (testOk ? "PASSED ✅" : "FAILED ❌");
