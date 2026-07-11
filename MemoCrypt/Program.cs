@@ -1,6 +1,4 @@
-﻿using Serilog;
-
-namespace MemoCrypt
+﻿namespace MemoCrypt
 {
     internal abstract class Program
     {
@@ -9,43 +7,49 @@ namespace MemoCrypt
         public static void Main(string[] args)
         {
             SetConsoleTitle(Utils.Constants.Prog);
-            if (args.Length > 0)
+            if (args.Length == 0)
             {
-                try
+                Utils.ShowHelp();
+                return;
+            }
+            
+            try
+            {
+                var cli = new Cli();
+                (Cli.TargetAction action, Cipher) = cli.RunCli(args, Cipher);
+                
+                switch (action)
                 {
-                    var cli = new Cli();
-                    (Cli.TargetAction action, Cipher) = cli.RunCli(args, Cipher);
-
-                    switch (action)
-                    {
-                        case Cli.TargetAction.ShowHelp:
-                            Utils.ShowHelp();
-                            break;
-                        case Cli.TargetAction.ShowVersion:
-                            Utils.ShowVersion();
-                            break;
-                        case Cli.TargetAction.RunInteractive:
-                            RunInteractive();
-                            break;
-                        case Cli.TargetAction.RunTest:
-                            RunTest();
-                            break;
-                        case Cli.TargetAction.None:
-                            break;
-                    }
+                    case Cli.TargetAction.ShowHelp:
+                        Utils.ShowHelp();
+                        break;
+                    case Cli.TargetAction.ShowFullHelp:
+                        Utils.ShowHelp(license:true);
+                        break;
+                    case Cli.TargetAction.ShowVersion:
+                        Utils.ShowVersion();
+                        break;
+                    case Cli.TargetAction.RunInteractive:
+                        RunInteractive();
+                        break;
+                    case Cli.TargetAction.RunTest:
+                        RunTest();
+                        break;
+                    case Cli.TargetAction.None:
+                        break;
                 }
-                catch (FormatException exc)
-                {
-                    Console.WriteLine($"Error: {exc.Message}");
-                }
-                catch (ArgumentException exc)
-                {
-                    Console.WriteLine($"Error: {exc.Message}");
-                }
-                catch (IndexOutOfRangeException exc)
-                {
-                    Console.WriteLine($"Error: {exc.Message}");
-                }
+            }
+            catch (FormatException exc)
+            {
+                Console.WriteLine($"Error: {exc.Message}");
+            }
+            catch (ArgumentException exc)
+            {
+                Console.WriteLine($"Error: {exc.Message}");
+            }
+            catch (IndexOutOfRangeException exc)
+            {
+                Console.WriteLine($"Error: {exc.Message}");
             }
         }
 
@@ -134,60 +138,60 @@ namespace MemoCrypt
                 }
             }
 
-            static void RunCli(string[] args)
-            {
-                var parser = new Utils.CliParser(args);
-                var parsedArgs = parser.ParsedArgs;
-                
-                if (!string.IsNullOrEmpty(parsedArgs.FilePath))
-                {
-                    var filePath = Path.GetFullPath(parsedArgs.FilePath);
-                    try
-                    {
-                        parsedArgs.Text = Utils.ReadFileContent(filePath).Trim();
-                    }
-                    catch (FileNotFoundException e)
-                    {
-                        throw new FieldAccessException(e.Message, e);
-                    }
-                }
-                // TODO: implement output to file
-                // if (!string.IsNullOrEmpty(parsedArgs.OutFilePath))
-                // {
-                // }
-                
-                if (parsedArgs.ShowHelpText)
-                {
-                    Utils.ShowHelp();
-                    return;
-                }
-
-                if (parsedArgs.ShowVersionText)
-                {
-                    Utils.ShowVersion();
-                    return;
-                }
-
-                if (parsedArgs.RunInteractive)
-                {
-                    RunInteractive();
-                    return;
-                }
-
-                if (parsedArgs.RunTest)
-                {
-                    RunTest();
-                    return;
-                }
-
-                Cipher.UpdateKey(parsedArgs.Key);
-                Cipher.SetStrict(parsedArgs.Strict);
-
-                string result = (parsedArgs.Action == Utils.CliParser.Action.Encrypt)
-                    ? Cipher.Encrypt(parsedArgs.Text)
-                    : Cipher.Decrypt(parsedArgs.Text);
-                Console.WriteLine(result);
-            }
+            // static void RunCli(string[] args)
+            // {
+            //     var parser = new Utils.CliParser(args);
+            //     var parsedArgs = parser.ParsedArgs;
+            //     
+            //     if (!string.IsNullOrEmpty(parsedArgs.FilePath))
+            //     {
+            //         var filePath = Path.GetFullPath(parsedArgs.FilePath);
+            //         try
+            //         {
+            //             parsedArgs.Text = Utils.ReadFileContent(filePath).Trim();
+            //         }
+            //         catch (FileNotFoundException e)
+            //         {
+            //             throw new FieldAccessException(e.Message, e);
+            //         }
+            //     }
+            //     // TODO: implement output to file
+            //     // if (!string.IsNullOrEmpty(parsedArgs.OutFilePath))
+            //     // {
+            //     // }
+            //     
+            //     if (parsedArgs.ShowHelpText)
+            //     {
+            //         Utils.ShowHelp();
+            //         return;
+            //     }
+            //
+            //     if (parsedArgs.ShowVersionText)
+            //     {
+            //         Utils.ShowVersion();
+            //         return;
+            //     }
+            //
+            //     if (parsedArgs.RunInteractive)
+            //     {
+            //         RunInteractive();
+            //         return;
+            //     }
+            //
+            //     if (parsedArgs.RunTest)
+            //     {
+            //         RunTest();
+            //         return;
+            //     }
+            //
+            //     Cipher.UpdateKey(parsedArgs.Key);
+            //     Cipher.SetStrict(parsedArgs.Strict);
+            //
+            //     string result = (parsedArgs.Action == Utils.CliParser.Action.Encrypt)
+            //         ? Cipher.Encrypt(parsedArgs.Text)
+            //         : Cipher.Decrypt(parsedArgs.Text);
+            //     Console.WriteLine(result);
+            // }
 
             static void RunTest(string keyword = "PROGRAMMIEREN", string memoText = "HELLO WORLD",
                 bool strictMode = false)

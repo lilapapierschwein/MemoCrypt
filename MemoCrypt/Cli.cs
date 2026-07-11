@@ -11,7 +11,8 @@ public class Cli
         
         if (parsedArgs.ShowHelpText)
         {
-            return (TargetAction.ShowHelp, cipher);
+            var action = (parsedArgs.ShowHelpTextFull) ? TargetAction.ShowFullHelp : TargetAction.ShowHelp;
+            return (action, cipher);
         }
 
         if (parsedArgs.ShowVersionText)
@@ -67,12 +68,12 @@ public class Cli
 
     public class Parser
     {
-        public string[] OriginalArgs;
+        private string[] _originalArgs;
         public Arguments ParsedArgs { get; set; } = new Arguments();
 
         public Parser(string[] args)
         {
-            OriginalArgs = args;
+            _originalArgs = args;
             Parse();
         }
 
@@ -80,36 +81,43 @@ public class Cli
         {
             if (args != null)
             {
-                OriginalArgs = args;
+                _originalArgs = args;
             }
             
-            if (Flags.Markers.HelpFlags.Any(item => OriginalArgs.Contains(item)))
+            if (Flags.Markers.HelpFlags.Any(item => _originalArgs.Contains(item)))
             {
                 ParsedArgs.ShowHelpText = true;
+                foreach (var originalArg in _originalArgs)
+                {
+                    if (Flags.Markers.HelpFlags.Contains(originalArg))
+                    {
+                        ParsedArgs.ShowHelpTextFull = (originalArg == "--help" || originalArg == "\\help");
+                    }
+                }
                 return;
             }
 
-            if (Flags.Markers.VersionFlags.Any(item => OriginalArgs.Contains(item)))
+            if (Flags.Markers.VersionFlags.Any(item => _originalArgs.Contains(item)))
             {
                 ParsedArgs.ShowVersionText = true;
                 return;
             }
 
-            if (Flags.Markers.InteractiveFlags.Any(item => OriginalArgs.Contains(item)))
+            if (Flags.Markers.InteractiveFlags.Any(item => _originalArgs.Contains(item)))
             {
                 ParsedArgs.RunInteractive = true;
                 return;
             }
 
-            if (Flags.Markers.TestRunFlags.Any(item => OriginalArgs.Contains(item)))
+            if (Flags.Markers.TestRunFlags.Any(item => _originalArgs.Contains(item)))
             {
                 ParsedArgs.RunTest = true;
                 return;
             }
 
-            if (Flags.Markers.OperationFlags.Any(item => OriginalArgs.Contains(item)))
+            if (Flags.Markers.OperationFlags.Any(item => _originalArgs.Contains(item)))
             {
-                foreach (string originalArg in OriginalArgs)
+                foreach (string originalArg in _originalArgs)
                 {
                     if (Flags.Markers.OperationFlags.Contains(originalArg))
                     {
@@ -121,40 +129,40 @@ public class Cli
                 }
             }
             
-            ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => OriginalArgs.Contains(item));
+            ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => _originalArgs.Contains(item));
 
             bool textFromFile = false;
             try
             {
-                for (int i = 0; i < OriginalArgs.Length; i++)
+                for (int i = 0; i < _originalArgs.Length; i++)
                 {
-                    if (Flags.Markers.KeyFlags.Contains(OriginalArgs[i]))
+                    if (Flags.Markers.KeyFlags.Contains(_originalArgs[i]))
                     {
-                        ParsedArgs.Key = (OriginalArgs[i + 1].EndsWith(".txt")) 
-                            ? Utils.ReadFileContent(OriginalArgs[i + 1]).Trim() 
-                            : OriginalArgs[i + 1];
+                        ParsedArgs.Key = (_originalArgs[i + 1].EndsWith(".txt")) 
+                            ? Utils.ReadFileContent(_originalArgs[i + 1]).Trim() 
+                            : _originalArgs[i + 1];
                         i += 1;
                         continue;
                     }
 
-                    if (Flags.Markers.FileFlags.Contains(OriginalArgs[i]))
+                    if (Flags.Markers.FileFlags.Contains(_originalArgs[i]))
                     {
-                        Utils.ValidateFilePath(OriginalArgs[i + 1]);
-                        ParsedArgs.FilePath = OriginalArgs[i + 1];
+                        Utils.ValidateFilePath(_originalArgs[i + 1]);
+                        ParsedArgs.FilePath = _originalArgs[i + 1];
                         ParsedArgs.Text = Utils.ReadFileContent(ParsedArgs.FilePath).Trim();
                         textFromFile = true;
                         i += 1;
                         continue;
                     }
 
-                    if (Flags.Markers.OutputFlags.Contains(OriginalArgs[i]))
+                    if (Flags.Markers.OutputFlags.Contains(_originalArgs[i]))
                     {
                         try
                         {
-                            var outPath = OriginalArgs[i + 1];
+                            var outPath = _originalArgs[i + 1];
                             var outputDir = Path.GetDirectoryName(Path.GetFullPath(outPath));
                             Utils.ValidateFilePath(outputDir, true);
-                            ParsedArgs.OutFilePath = OriginalArgs[i + 1];
+                            ParsedArgs.OutFilePath = _originalArgs[i + 1];
                             Output = OutputStream.FileStream;
                         }
                         catch (DirectoryNotFoundException exc)
@@ -162,14 +170,13 @@ public class Cli
                             Console.WriteLine($"Error: {exc.Message}. Outputfile cannot be created.");
                             Environment.Exit(1);
                             i += 1;
-                            continue;
                         }
                     }
                 }
 
                 if (!textFromFile)
                 {
-                    ParsedArgs.Text = OriginalArgs[^1];
+                    ParsedArgs.Text = _originalArgs[^1];
                 }
             }
             catch (IndexOutOfRangeException)
@@ -186,6 +193,7 @@ public class Cli
         public class Arguments
         {
             public bool ShowHelpText { get; set; }
+            public bool ShowHelpTextFull { get; set; }
             public bool ShowVersionText { get; set; }
             public bool RunInteractive { get; set; }
             public bool RunTest { get; set; }
@@ -235,6 +243,7 @@ public class Cli
     {
         None = 0,
         ShowHelp,
+        ShowFullHelp,
         ShowVersion,
         RunInteractive,
         RunTest,
