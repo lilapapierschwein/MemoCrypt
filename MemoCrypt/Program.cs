@@ -1,9 +1,11 @@
-﻿namespace MemoCrypt
+﻿using Serilog;
+
+namespace MemoCrypt
 {
     internal abstract class Program
     {
         private static PolybiusCipher Cipher = new PolybiusCipher();
-
+        
         public static void Main(string[] args)
         {
             SetConsoleTitle(Utils.Constants.Prog);

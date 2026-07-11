@@ -59,7 +59,6 @@ public class PolybiusCipher
         {
             throw new FormatException($"Plaintext '{plaintext}' is not a valid string.");
         }
-        
         string normalizedText = Validators.NormalizeString(plaintext);
         var sb = new StringBuilder(normalizedText.Length * 2);
 
@@ -69,7 +68,7 @@ public class PolybiusCipher
             sb.Append(row+1);
             sb.Append(col+1);
         }
-        
+        var result = sb.ToString();
         return sb.ToString();
     }
     

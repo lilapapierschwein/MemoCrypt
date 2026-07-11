@@ -8,7 +8,7 @@ public class Cli
     {
         var parser = new Parser(args);
         var parsedArgs = parser.ParsedArgs;
-
+        
         if (parsedArgs.ShowHelpText)
         {
             return (TargetAction.ShowHelp, cipher);
@@ -48,7 +48,6 @@ public class Cli
         }
 
         cipher.SetStrict(parsedArgs.Strict);
-        
         string result = (parsedArgs.Action == Parser.Action.Encrypt)
             ? cipher.Encrypt(parsedArgs.Text)
             : cipher.Decrypt(parsedArgs.Text);
@@ -77,8 +76,13 @@ public class Cli
             Parse();
         }
 
-        private void Parse()
+        private void Parse(string[]? args = null) 
         {
+            if (args != null)
+            {
+                OriginalArgs = args;
+            }
+            
             if (Flags.Markers.HelpFlags.Any(item => OriginalArgs.Contains(item)))
             {
                 ParsedArgs.ShowHelpText = true;
@@ -116,37 +120,30 @@ public class Cli
                     }
                 }
             }
-
+            
             ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => OriginalArgs.Contains(item));
+
+            bool textFromFile = false;
             try
             {
-                bool textFromFile = false;
                 for (int i = 0; i < OriginalArgs.Length; i++)
                 {
                     if (Flags.Markers.KeyFlags.Contains(OriginalArgs[i]))
                     {
-                        ParsedArgs.Key = OriginalArgs[i + 1];
+                        ParsedArgs.Key = (OriginalArgs[i + 1].EndsWith(".txt")) 
+                            ? Utils.ReadFileContent(OriginalArgs[i + 1]).Trim() 
+                            : OriginalArgs[i + 1];
                         i += 1;
                         continue;
                     }
 
                     if (Flags.Markers.FileFlags.Contains(OriginalArgs[i]))
                     {
-                        try
-                        {
-                            Utils.ValidateFilePath(OriginalArgs[i + 1]);
-                            ParsedArgs.FilePath = OriginalArgs[i + 1];
-                            ParsedArgs.Text = Utils.ReadFileContent(ParsedArgs.FilePath).Trim();
-                            textFromFile = true;
-                            i += 1;
-                        }
-                        catch (IndexOutOfRangeException exc)
-                        {
-                            Console.WriteLine(
-                                $"Error: Unable to parse malformed command line arguments.\n{exc.Message}");
-                            Environment.Exit(1);
-                        }
-
+                        Utils.ValidateFilePath(OriginalArgs[i + 1]);
+                        ParsedArgs.FilePath = OriginalArgs[i + 1];
+                        ParsedArgs.Text = Utils.ReadFileContent(ParsedArgs.FilePath).Trim();
+                        textFromFile = true;
+                        i += 1;
                         continue;
                     }
 
@@ -167,17 +164,21 @@ public class Cli
                             i += 1;
                             continue;
                         }
-
-                        if (!textFromFile && i == OriginalArgs.Length - 1)
-                        {
-                            ParsedArgs.Text = OriginalArgs[i];
-                        }
                     }
+                }
+
+                if (!textFromFile)
+                {
+                    ParsedArgs.Text = OriginalArgs[^1];
                 }
             }
             catch (IndexOutOfRangeException)
             {
                 throw new IndexOutOfRangeException("Unable to parse malformed command line arguments.");
+            }
+            catch (FileNotFoundException exc)
+            {
+                throw new FileNotFoundException(exc.Message, exc);
             }
         }
 
