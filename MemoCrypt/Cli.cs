@@ -30,7 +30,7 @@ public class Cli
             return (TargetAction.RunTest, cipher);
         }
 
-        if (!string.IsNullOrEmpty(parsedArgs.Key) && parsedArgs.Key.EndsWith(".txt"))
+        if (!string.IsNullOrEmpty(parsedArgs.Key) && Validators.KeyIsFile(parsedArgs.Key))
         {
             try
             {
@@ -39,7 +39,7 @@ public class Cli
             }
             catch (FileNotFoundException exc)
             {
-                Console.WriteLine($"Error: {exc.Message} ({exc.FileName}). Key could not be found.");
+                Console.Write($"Error: {exc.Message} ({exc.FileName}). Key could not be found.");
                 Environment.Exit(1);
             }
         }
@@ -56,11 +56,11 @@ public class Cli
         switch (Output)
         {
             case OutputStream.Stdout or OutputStream.Stderr:
-                Console.WriteLine($"\r{result.Trim()}");
+                Console.Write(result.Trim());
                 break;
             case OutputStream.FileStream:
                 Utils.WriteToFile(parsedArgs.OutFilePath, result, validate:false);
-                Console.WriteLine($"\rSaved to file: '{Path.GetFullPath(parsedArgs.OutFilePath)}'");
+                Console.Write($"Saved to file: '{Path.GetFullPath(parsedArgs.OutFilePath)}'");
                 break;
         }
         return (TargetAction.None, cipher);
@@ -130,7 +130,7 @@ public class Cli
             }
             
             ParsedArgs.Strict = Flags.Markers.StrictModeFlags.Any(item => _originalArgs.Contains(item));
-
+            
             bool textFromFile = false;
             try
             {
@@ -138,7 +138,7 @@ public class Cli
                 {
                     if (Flags.Markers.KeyFlags.Contains(_originalArgs[i]))
                     {
-                        ParsedArgs.Key = (_originalArgs[i + 1].EndsWith(".txt")) 
+                        ParsedArgs.Key = (Validators.KeyIsFile(_originalArgs[i + 1])) 
                             ? Utils.ReadFileContent(_originalArgs[i + 1]).Trim() 
                             : _originalArgs[i + 1];
                         i += 1;
@@ -176,7 +176,11 @@ public class Cli
 
                 if (!textFromFile)
                 {
-                    ParsedArgs.Text = _originalArgs[^1];
+                    // let the user specify a file implicitly
+                    var inputText = _originalArgs[^1];
+                    ParsedArgs.Text = (Validators.TextIsFile(inputText))
+                        ? Utils.ReadFileContent(inputText).Trim()
+                        : inputText.Trim();
                 }
             }
             catch (IndexOutOfRangeException)
@@ -241,7 +245,7 @@ public class Cli
 
     public enum TargetAction
     {
-        None = 0,
+        None,
         ShowHelp,
         ShowFullHelp,
         ShowVersion,

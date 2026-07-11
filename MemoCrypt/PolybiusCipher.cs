@@ -68,7 +68,6 @@ public class PolybiusCipher
             sb.Append(row+1);
             sb.Append(col+1);
         }
-        var result = sb.ToString();
         return sb.ToString();
     }
     
@@ -136,7 +135,6 @@ public class PolybiusCipher
     {
         return _strict;
     }
-
     public void SetStrict(bool strict)
     {
         _strict = strict;
@@ -152,12 +150,9 @@ public class PolybiusCipher
     /// <exception cref="ArgumentException">When the character is not present.</exception>
     private (int Row, int Col) GetCoordinateOf(char c)
     {
-        if (!_coordinateOf.TryGetValue(c, out var coordinate))
-        {
-            throw new ArgumentException($"Character '{c}' is not in the matrix");
-        }
-
-        return coordinate;
+        return !_coordinateOf.TryGetValue(c, out var coordinate) 
+            ? throw new ArgumentException($"Character '{c}' is not in the matrix") 
+            : coordinate;
     }
     
     /// <summary>
@@ -280,4 +275,19 @@ public abstract partial class Validators
         return Regex.Replace(normalizedText, @"\s{2,}", " ");
     }
 
+    [GeneratedRegex(@"^(.+)(\.key)$")]
+    private static partial Regex KeyFilePattern();
+
+    public static bool KeyIsFile(string key)
+    {
+        return KeyFilePattern().IsMatch(key);
+    }
+    
+    [GeneratedRegex(@"^(.+)(\.txt)$")]
+    private static partial Regex TextFilePattern();
+
+    public static bool TextIsFile(string text)
+    {
+        return TextFilePattern().IsMatch(text);
+    }
 }

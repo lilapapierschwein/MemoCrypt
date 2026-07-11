@@ -14,52 +14,54 @@ public abstract class Utils
         public static readonly int DefaultTextWidth = 80;
 
         public static readonly string HelpText = $"""
-                                                    usage: {Prog} [flag] [option <arg>] ... (CIPHER|TEXT)
+                                                  usage: {Prog} [flag] [option <arg>] ... (CIPHER|TEXT)
+
+                                                  encrypt and decrypt your memo using the polybius cipher
+
+                                                  examples:
+                                                    {Prog} -k $KEY $TEXT
+                                                    {Prog} -k $KEYFILE.key -d $TEXT
+                                                    {Prog} -k $KEY -f $FILE -e 
+                                                    {Prog} -k $KEY -o $OUTPUTFILE $TEXT
+
+                                                  positional arguments:
+                                                    (CIPHER|TEXT|FILE)  the input to encrypt or decrypt.
+                                                                        in strict mode, input to be encrypted containing any 
+                                                                        invalid character will raise and error whilein normal mode
+                                                                        invalid characters will be ignored, possibly malforming 
+                                                                        the original text. 
+                                                                        valid characters are: all upper-/lowercase ascii alphabet 
+                                                                        characters and whitespace. regex pattern: [A-Za-z\s]
+                                                                        can also be a <textfile>.txt to implicitly set a -f,--file
+                                                                        while omitting the explicit flag.
+                                                                        
+                                                  options:
+                                                    -k,--key (KEY|FILE) the keyword to use for encryption or decryption.
+                                                                        either a string of ascii alphabetical characters
+                                                                        a <keyfile>.key containg that string.
+                                                                        can be ommited, making the encrytion algorithm
+                                                                        resort to the default alphabet, thus making it
+                                                                        highly insecure. 
+                                                                        using a key is generally highly advised.
+                                                    -f,--file <FILE>    read the input TEXT from a file <textfile>.txt
+                                                                        instead from arguments. input from file takes 
+                                                                        precedence over a TEXT provided as positional 
+                                                                        argument, meaning the latter is redundant and 
+                                                                        will be ignored.
                                                     
-                                                    encrypt and decrypt your memo using the polybius cipher
-                                                    
-                                                    examples:
-                                                      {Prog} -k $KEY $TEXT
-                                                      {Prog} -k $KEYFILE.txt -d $TEXT
-                                                      {Prog} -k $KEY -f $FILE -e 
-                                                      {Prog} -k $KEY -o $OUTPUTFILE $TEXT
-                                                    
-                                                    positional arguments:
-                                                      (CIPHER|TEXT)       the input to encrypt or decrypt.
-                                                                          in strict mode, input to be encrypted containing any 
-                                                                          invalid character will raise and error whilein normal mode
-                                                                          invalid characters will be ignored, possibly malforming 
-                                                                          the original text. 
-                                                                          valid characters are: all upper-/lowercase ascii alphabet 
-                                                                          characters and whitespace. regex pattern: [A-Za-z\s]
-                                                    
-                                                    options:
-                                                      -k,--key (KEY|FILE) the keyword to use for encryption or decryption.
-                                                                          either a string of ascii alphabetical characters
-                                                                          a <textfile>.txt containg that string.
-                                                                          can be ommited, making the encrytion algorithm
-                                                                          resort to the default alphabet, thus making it
-                                                                          highly insecure. 
-                                                                          using a key is generally highly advised.
-                                                      -f,--file <FILE>    read the input TEXT from a file <textfile>.txt
-                                                                          instead from arguments. input from file takes 
-                                                                          precedence over a TEXT provided as positional 
-                                                                          argument, meaning the latter is redundant and 
-                                                                          will be ignored.
-                                                      
-                                                    flags:
-                                                      -e,--encrypt        encrypt the input (default).
-                                                      -d,--decrypt        decrypt the input.
-                                                      -s,--strict         run in strict mode. see CIPHER|TEXT for details.
-                                                      -i,--interactive    run in interactive mode.
-                                                      -t,--test           run tests.
-                                                      -h,--help           show this help message and exit.
-                                                      -V,--version        show version info and exit.
-                                                    
-                                                    please note, that this software is barely a working prototype. it is the result
-                                                    of a short termed practice assignment finishing a csharp introduction course
-                                                    and has only been checked for the most obvious bugs and not tested thoroughly.
-                                                    """;
+                                                  flags:
+                                                    -e,--encrypt        encrypt the input (default).
+                                                    -d,--decrypt        decrypt the input.
+                                                    -s,--strict         run in strict mode. see CIPHER|TEXT for details.
+                                                    -i,--interactive    run in interactive mode.
+                                                    -t,--test           run tests.
+                                                    -h,--help           show this help message and exit.
+                                                    -V,--version        show version info and exit.
+
+                                                  please note, that this software is barely a working prototype. it is the result
+                                                  of a short termed practice assignment finishing a csharp introduction course
+                                                  and has only been checked for the most obvious bugs and not tested thoroughly.
+                                                  """;
         public static readonly string LicenseText = """
                                                     MIT License
 
@@ -97,7 +99,7 @@ public abstract class Utils
         {
             Console.WriteLine(
                 $"\n{new string('-', Constants.DefaultTextWidth)}\n\n{Constants.LicenseText}"
-                );
+            );
         }
     }
 
@@ -137,6 +139,7 @@ public abstract class Utils
     /// </summary>
     /// <param name="title">Text to insert / append.</param>
     /// <param name="extend">If true, the text appended to orginal title, if any. (default: false).</param>
+    /// <returns>true if the title was set, false if an error occured</returns>
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
     public static bool SetConsoleTitle(string title, bool extend = false)
     {
@@ -195,5 +198,29 @@ public abstract class Utils
         }
         File.WriteAllText(path, content);
     }
+    
+    public static void WriteColored(string text, ConsoleColor color = ConsoleColor.Gray)
+    {
+        if (color == Console.ForegroundColor)
+        {
+            Console.Write(text);
+            return;
+        }
+        Console.ForegroundColor = color;
+        Console.Write(text);
+        Console.ResetColor();
+        
+    }
+    
+    public static void WriteColoredLine(string text, ConsoleColor color = ConsoleColor.Gray)
+    {
+        if (color == Console.ForegroundColor)
+        {
+            Console.WriteLine(text);
+            return;
+        }
+        Console.ForegroundColor = color;
+        Console.WriteLine(text);
+        Console.ResetColor();
+    }
 }
-
