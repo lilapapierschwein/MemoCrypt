@@ -16,7 +16,7 @@
             
             try
             {
-                (var action, _cipher) = Cli.RunCli(args, _cipher);
+                var action = Cli.RunCli(args, ref _cipher);
                 
                 switch (action)
                 {
@@ -46,14 +46,17 @@
             catch (FormatException exc)
             {
                 Console.Write($"Error: {exc.Message}");
+                Environment.Exit(1);
             }
             catch (ArgumentException exc)
             {
                 Console.Write($"Error: {exc.Message}");
+                Environment.Exit(1);
             }
             catch (IndexOutOfRangeException exc)
             {
                 Console.Write($"Error: {exc.Message}");
+                Environment.Exit(1);
             }
         }
 

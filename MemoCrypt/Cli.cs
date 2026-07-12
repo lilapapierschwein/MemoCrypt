@@ -4,7 +4,7 @@ public class Cli
 {
     private static OutputStream Output { get; set; } = OutputStream.Stdout;
 
-    public static (TargetAction, PolybiusCipher) RunCli(string[] args, PolybiusCipher cipher)
+    public static TargetAction RunCli(string[] args, ref PolybiusCipher cipher)
     {
         var parser = new Parser(args);
         var parsedArgs = parser.ParsedArgs;
@@ -12,22 +12,22 @@ public class Cli
         if (parsedArgs.ShowHelpText)
         {
             var action = (parsedArgs.ShowHelpTextFull) ? TargetAction.ShowFullHelp : TargetAction.ShowHelp;
-            return (action, cipher);
+            return action;
         }
 
         if (parsedArgs.ShowVersionText)
         {
-            return (TargetAction.ShowVersion, cipher);
+            return TargetAction.ShowVersion;
         }
 
         if (parsedArgs.RunInteractive)
         {
-            return (TargetAction.RunInteractive, cipher);
+            return TargetAction.RunInteractive;
         }
 
         if (parsedArgs.RunTest)
         {
-            return (TargetAction.RunTest, cipher);
+            return TargetAction.RunTest;
         }
 
         if (!string.IsNullOrEmpty(parsedArgs.Key) && Validators.KeyIsFile(parsedArgs.Key))
@@ -63,7 +63,8 @@ public class Cli
                 Console.WriteLine($"Saved to file: '{Path.GetFullPath(parsedArgs.OutFilePath)}'");
                 break;
         }
-        return (TargetAction.None, cipher);
+
+        return TargetAction.None;
     }
 
     public class Parser
