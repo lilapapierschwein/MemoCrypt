@@ -12,6 +12,7 @@ public abstract class Utils
         public static readonly string Prog = "MemoCrypt";
         public static readonly string Version = "0.1.0";
         public static readonly int DefaultTextWidth = 80;
+        public static readonly string KeyFiletype = ".mck";
 
         public static readonly string HelpText = $"""
                                                   usage: {Prog} [flag] [option <arg>] ... (CIPHER|TEXT)
@@ -20,7 +21,7 @@ public abstract class Utils
 
                                                   examples:
                                                     {Prog} -k $KEY $TEXT
-                                                    {Prog} -k $KEYFILE.key -d $TEXT
+                                                    {Prog} -k $KEYFILE.mck -d $TEXT
                                                     {Prog} -k $KEY -f $FILE -e 
                                                     {Prog} -k $KEY -o $OUTPUTFILE $TEXT
 
@@ -38,7 +39,7 @@ public abstract class Utils
                                                   options:
                                                     -k,--key (KEY|FILE) the keyword to use for encryption or decryption.
                                                                         either a string of ascii alphabetical characters
-                                                                        a <keyfile>.key containg that string.
+                                                                        a <keyfile>.mck containg that string.
                                                                         can be ommited, making the encrytion algorithm
                                                                         resort to the default alphabet, thus making it
                                                                         highly insecure. 

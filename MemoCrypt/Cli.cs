@@ -4,7 +4,7 @@ public class Cli
 {
     private static OutputStream Output { get; set; } = OutputStream.Stdout;
 
-    public (TargetAction, PolybiusCipher) RunCli(string[] args, PolybiusCipher cipher)
+    public static (TargetAction, PolybiusCipher) RunCli(string[] args, PolybiusCipher cipher)
     {
         var parser = new Parser(args);
         var parsedArgs = parser.ParsedArgs;
@@ -34,7 +34,7 @@ public class Cli
         {
             try
             {
-                var keyFromFile = Utils.ReadFileContent(parsedArgs.Key).Trim();
+                var keyFromFile = Utils.ReadFileContent(parsedArgs.Key);
                 cipher.UpdateKey(keyFromFile);
             }
             catch (FileNotFoundException exc)
@@ -60,7 +60,7 @@ public class Cli
                 break;
             case OutputStream.FileStream:
                 Utils.WriteToFile(parsedArgs.OutFilePath, result, validate:false);
-                Console.Write($"Saved to file: '{Path.GetFullPath(parsedArgs.OutFilePath)}'");
+                Console.WriteLine($"Saved to file: '{Path.GetFullPath(parsedArgs.OutFilePath)}'");
                 break;
         }
         return (TargetAction.None, cipher);
@@ -69,7 +69,7 @@ public class Cli
     public class Parser
     {
         private string[] _originalArgs;
-        public Arguments ParsedArgs { get; set; } = new Arguments();
+        public Arguments ParsedArgs { get; } = new Arguments();
 
         public Parser(string[] args)
         {
@@ -136,15 +136,20 @@ public class Cli
             {
                 for (int i = 0; i < _originalArgs.Length; i++)
                 {
-                    if (Flags.Markers.KeyFlags.Contains(_originalArgs[i]))
+                    if (Flags.Markers.KeyFlags.Contains(_originalArgs[i]) || _originalArgs[i].EndsWith(Utils.Constants.KeyFiletype))
                     {
+                        if (_originalArgs[i].EndsWith(Utils.Constants.KeyFiletype))
+                        {
+                            ParsedArgs.Key = Utils.ReadFileContent(_originalArgs[i]);
+                            continue;
+                        }
+                        
                         ParsedArgs.Key = (Validators.KeyIsFile(_originalArgs[i + 1])) 
                             ? Utils.ReadFileContent(_originalArgs[i + 1]).Trim() 
                             : _originalArgs[i + 1];
                         i += 1;
                         continue;
                     }
-
                     if (Flags.Markers.FileFlags.Contains(_originalArgs[i]))
                     {
                         Utils.ValidateFilePath(_originalArgs[i + 1]);
@@ -215,7 +220,6 @@ public class Cli
             Encrypt,
             Decrypt
         }
-
 
         private struct Flags
         {

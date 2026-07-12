@@ -16,8 +16,7 @@
             
             try
             {
-                var cli = new Cli();
-                (var action, _cipher) = cli.RunCli(args, _cipher);
+                (var action, _cipher) = Cli.RunCli(args, _cipher);
                 
                 switch (action)
                 {
@@ -38,6 +37,9 @@
                         tests.RunTests();
                         break;
                     case Cli.TargetAction.None:
+                        break;
+                    default:
+                        Utils.ShowHelp();
                         break;
                 }
             }

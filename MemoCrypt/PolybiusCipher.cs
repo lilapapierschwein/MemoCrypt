@@ -115,6 +115,7 @@ public class PolybiusCipher
 
     public void UpdateKey(string keyword = "", bool reload = false)
     {
+        keyword = NormalizeKey(keyword);
         if (reload)
         {
             if (!string.IsNullOrEmpty(keyword))
@@ -211,7 +212,7 @@ public class PolybiusCipher
         return compliledAlphabet;
     }
 
-    
+
     /// <summary>
     /// Normalizes and deduplicates the input.
     /// </summary>
@@ -225,8 +226,8 @@ public class PolybiusCipher
         {
             return string.Empty;
         }
-
-        var normalizedKeyword = Validators.NormalizeString(keyword);
+        
+        var normalizedKeyword = Validators.NormalizeString(keyword, removeWhitespace:true);
         if (string.IsNullOrEmpty(normalizedKeyword))
         {
             return string.Empty;
@@ -235,6 +236,25 @@ public class PolybiusCipher
             return normalizedKeyword;
         }
         return new string(normalizedKeyword.Distinct().ToArray());
+    }
+    
+    public static string RemoveWhitespaces(string text)
+    {
+        string nonWhitespaceText;
+        try
+        {
+            nonWhitespaceText = Regex.Replace(text, @"\s", "").Trim();
+        }
+        catch (Exception e) when (
+            e is ArgumentException or 
+                ArgumentNullException or 
+                RegexMatchTimeoutException
+            )
+        {
+            // handle explicity if regex fails
+            nonWhitespaceText = text.Trim().Replace(" ", "").Replace("\t", "").Replace("\n","");
+        }
+        return nonWhitespaceText;
     }
 }
 
@@ -257,6 +277,7 @@ public abstract partial class Validators
         
     [GeneratedRegex(@"[^A-Za-z\s]+")]
     private static partial Regex InValidCharsPattern();
+
     /// <summary>
     /// Converts the input to uppercase, removes all unallowed characters defined in the pattern `ValidCharsRegex`
     /// and returns the result with whitespaces truncated.
@@ -265,17 +286,28 @@ public abstract partial class Validators
     /// https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference
     /// </summary>
     /// <param name="plaintext">The plain input.</param>
+    /// <param name="removeWhitespace"></param>
     /// <returns>
     /// string: The normalized string for further processing. 
     /// </returns>
-    public static string NormalizeString(string plaintext)
+    public static string NormalizeString(string plaintext, bool removeWhitespace = false)
     {
         // we use `string.ToUpperCaseInvariant` over `string.ToUpperCase` to avoid unexpected (local) character mappings
+        if (string.IsNullOrEmpty(plaintext))
+        {
+            return string.Empty;
+        }
+
+        
+        if (removeWhitespace)
+        {
+            plaintext = PolybiusCipher.RemoveWhitespaces(plaintext);
+        }
         var normalizedText = InValidCharsPattern().Replace(plaintext.ToUpperInvariant(), "");
         return Regex.Replace(normalizedText, @"\s{2,}", " ");
     }
 
-    [GeneratedRegex(@"^(.+)(\.key)$")]
+    [GeneratedRegex(@"^(.+)(\.mck)$")]
     private static partial Regex KeyFilePattern();
 
     public static bool KeyIsFile(string key)
